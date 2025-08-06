@@ -1,0 +1,59 @@
+@PedidosApi.API_HostAddress = http://localhost:5006
+
+###
+# 1. Listar Pedidos (apenas ativos)
+GET {{PedidosApi.API_HostAddress}}/api/pedidos
+Accept: application/json
+
+###
+# 2. Efetuar Pedido - Produto com estoque disponível
+POST {{PedidosApi.API_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "produtoId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "descricao": "Smartphone Samsung Galaxy S24",
+  "quantidade": 2,
+  "precoUnitario": 899.99
+}
+
+###
+# 3. Efetuar Pedido - Testando outro produto
+POST {{PedidosApi.API_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "produtoId": "c3d4e5f6-a7b8-9012-cdef-345678901234",
+  "descricao": "Mouse Logitech MX Master 3",
+  "quantidade": 5,
+  "precoUnitario": 149.99
+}
+
+###
+# 4. Efetuar Pedido - Produto inexistente (deve falhar)
+POST {{PedidosApi.API_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "produtoId": "99999999-9999-9999-9999-999999999999",
+  "descricao": "Produto Inexistente",
+  "quantidade": 1,
+  "precoUnitario": 100.00
+}
+
+###
+# 5. Efetuar Pedido - Estoque insuficiente (deve falhar)
+POST {{PedidosApi.API_HostAddress}}/api/pedidos
+Content-Type: application/json
+
+{
+  "produtoId": "b8c9d0e1-f2a3-4567-89ab-cdef01234567",
+  "descricao": "Placa de Video RTX 4070",
+  "quantidade": 50,
+  "precoUnitario": 3299.99
+}
+
+###
+# 6. Cancelar Pedido
+POST {{PedidosApi.API_HostAddress}}/api/pedidos/550e8400-e29b-41d4-a716-446655440001/cancelar
+Content-Type: application/json
