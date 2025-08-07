@@ -4,13 +4,15 @@ using PedidosApi.Domain.Interfaces;
 using PedidosApi.Domain.Exceptions;
 using PedidosApi.Infrastructure.Repositories;
 using Xunit;
+using AppInterfaces = PedidosApi.Application.Interfaces;
 
 namespace PedidosApi.Tests.UnitTests
 {
     public class PedidoServiceTests : IDisposable
     {
-        private readonly IPedidoRepository _pedidoRepository;
-        private readonly IEstoqueRepository _estoqueRepository;
+        private readonly AppInterfaces.IPedidoRepository _pedidoRepository;
+        private readonly AppInterfaces.IEstoqueRepository _estoqueRepository;
+        private readonly IEstoqueService _estoqueService;
         private readonly PedidoService _service;
         private readonly string _testPedidosFilePath;
         private readonly string _testEstoqueFilePath;
@@ -22,7 +24,8 @@ namespace PedidosApi.Tests.UnitTests
             
             _pedidoRepository = new JsonPedidoRepository(_testPedidosFilePath);
             _estoqueRepository = new JsonEstoqueRepository(_testEstoqueFilePath);
-            _service = new PedidoService(_pedidoRepository, _estoqueRepository);
+            _estoqueService = new EstoqueService(_estoqueRepository);
+            _service = new PedidoService(_pedidoRepository, _estoqueService);
             
             // Criar arquivo de estoque para testes
             CriarEstoqueParaTeste();

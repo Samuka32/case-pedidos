@@ -266,4 +266,5 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Application specific files
-pedidos.json
+Data/pedidos.json
+Data/estoque.json

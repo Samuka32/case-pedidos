@@ -1,4 +1,5 @@
-﻿using PedidosApi.Domain.Entities;
+﻿using PedidosApi.Application.Interfaces;
+using PedidosApi.Domain.Entities;
 using PedidosApi.Domain.Interfaces;
 using PedidosApi.Domain.Exceptions;
 
@@ -7,17 +8,18 @@ namespace PedidosApi.Application.Services;
 public class PedidoService : IPedidoService
 {
     private readonly IPedidoRepository _pedidoRepository;
-    private readonly IEstoqueRepository _estoqueRepository;
+    private readonly IEstoqueService _estoqueService;
 
-    public PedidoService(IPedidoRepository pedidoRepository, IEstoqueRepository estoqueRepository)
+    public PedidoService(IPedidoRepository pedidoRepository, IEstoqueService estoqueService)
     {
         _pedidoRepository = pedidoRepository;
-        _estoqueRepository = estoqueRepository;
+        _estoqueService = estoqueService;
     }
 
     public async Task<List<Pedido>> ListarPedidosAtivosAsync()
     {
-        return await _pedidoRepository.GetAtivosAsync();
+        var todosPedidos = await _pedidoRepository.GetAllAsync();
+        return todosPedidos.Where(p => p.Ativo).ToList();
     }
 
     public async Task<Pedido?> BuscarPorIdAsync(Guid id)
@@ -27,15 +29,17 @@ public class PedidoService : IPedidoService
 
     public async Task<Pedido> CriarPedidoAsync(Guid produtoId, string descricao, int quantidade, decimal precoUnitario)
     {
-        // Verificar se produto existe e tem estoque suficiente atomicamente
-        var estoqueReservado = await _estoqueRepository.ReservarEstoqueAsync(produtoId, quantidade);
+        // Verificar se produto existe
+        var produto = await _estoqueService.ObterEstoqueProdutoAsync(produtoId);
+        if (produto == null)
+        {
+            throw new PedidoException("Produto não encontrado");
+        }
+
+        // Verificar disponibilidade e reservar estoque atomicamente
+        var estoqueReservado = await _estoqueService.ReservarEstoqueAsync(produtoId, quantidade);
         if (!estoqueReservado)
         {
-            var produto = await _estoqueRepository.GetByProdutoIdAsync(produtoId);
-            if (produto == null)
-            {
-                throw new PedidoException("Produto não encontrado");
-            }
             throw new PedidoException("Estoque insuficiente");
         }
 
@@ -58,7 +62,7 @@ public class PedidoService : IPedidoService
         catch
         {
             // Se falhar ao criar pedido, liberar estoque
-            await _estoqueRepository.LiberarEstoqueAsync(produtoId, quantidade);
+            await _estoqueService.LiberarEstoqueAsync(produtoId, quantidade);
             throw;
         }
     }
@@ -78,9 +82,10 @@ public class PedidoService : IPedidoService
         }
 
         // Liberar estoque
-        await _estoqueRepository.LiberarEstoqueAsync(pedido.ProdutoId, pedido.Quantidade);
+        await _estoqueService.LiberarEstoqueAsync(pedido.ProdutoId, pedido.Quantidade);
 
-        // Cancelar pedido
-        return await _pedidoRepository.CancelarPedidoAsync(id);
+        // Cancelar pedido (alterar status)
+        pedido.Ativo = false;
+        return await _pedidoRepository.UpdateAsync(pedido);
     }
 }
