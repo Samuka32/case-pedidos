@@ -1,6 +1,6 @@
 using System.Text.Json;
+using PedidosApi.Application.Interfaces;
 using PedidosApi.Domain.Entities;
-using PedidosApi.Domain.Interfaces;
 
 namespace PedidosApi.Infrastructure.Repositories;
 
@@ -11,8 +11,10 @@ public class JsonPedidoRepository : IPedidoRepository
 
     public JsonPedidoRepository()
     {
-        // Usa o diretório atual ao invés do BaseDirectory
-        _filePath = Path.Combine(Directory.GetCurrentDirectory(), "pedidos.json");
+        // Calcula o caminho para a pasta Data na raiz do repositório
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var projectRoot = Path.GetDirectoryName(currentDirectory);
+        _filePath = Path.Combine(projectRoot ?? currentDirectory, "Data", "pedidos.json");
     }
 
     public JsonPedidoRepository(string filePath)
@@ -40,12 +42,6 @@ public class JsonPedidoRepository : IPedidoRepository
 
         var json = await File.ReadAllTextAsync(_filePath);
         return JsonSerializer.Deserialize<List<Pedido>>(json) ?? new List<Pedido>();
-    }
-
-    public async Task<List<Pedido>> GetAtivosAsync()
-    {
-        var pedidos = await GetAllAsync();
-        return pedidos.Where(p => p.Ativo).ToList();
     }
 
     public async Task<Pedido?> GetByIdAsync(Guid id)
@@ -89,16 +85,6 @@ public class JsonPedidoRepository : IPedidoRepository
         {
             _semaphore.Release();
         }
-    }
-
-    public async Task<bool> CancelarPedidoAsync(Guid id)
-    {
-        var pedido = await GetByIdAsync(id);
-        if (pedido == null)
-            return false;
-
-        pedido.Ativo = false;
-        return await UpdateAsync(pedido);
     }
 
     private async Task SalvarPedidosAsync(List<Pedido> pedidos)

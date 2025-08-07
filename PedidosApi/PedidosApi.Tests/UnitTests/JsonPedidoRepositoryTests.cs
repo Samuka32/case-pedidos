@@ -143,44 +143,6 @@ namespace PedidosApi.Tests.UnitTests
         }
 
         [Fact]
-        public async Task GetAtivosAsync_DeveRetornarApenasPedidosAtivos()
-        {
-            // Arrange
-            var pedidoAtivo = new Pedido
-            {
-                Id = Guid.NewGuid(),
-                ProdutoId = Guid.NewGuid(),
-                Descricao = "Produto Ativo",
-                Quantidade = 1,
-                PrecoUnitario = 15.00m,
-                ValorTotal = 15.00m,
-                Ativo = true
-            };
-            
-            var pedidoCancelado = new Pedido
-            {
-                Id = Guid.NewGuid(),
-                ProdutoId = Guid.NewGuid(),
-                Descricao = "Produto Cancelado",
-                Quantidade = 1,
-                PrecoUnitario = 20.00m,
-                ValorTotal = 20.00m,
-                Ativo = false
-            };
-            
-            await _repository.AddAsync(pedidoAtivo);
-            await _repository.AddAsync(pedidoCancelado);
-
-            // Act
-            var resultados = await _repository.GetAtivosAsync();
-
-            // Assert
-            Assert.Single(resultados);
-            Assert.Equal(pedidoAtivo.Id, resultados.First().Id);
-            Assert.True(resultados.First().Ativo);
-        }
-
-        [Fact]
         public async Task UpdateAsync_PedidoExistente_AtualizaERetornaTrue()
         {
             // Arrange
@@ -224,43 +186,6 @@ namespace PedidosApi.Tests.UnitTests
 
             // Act
             var resultado = await _repository.UpdateAsync(pedidoInexistente);
-
-            // Assert
-            Assert.False(resultado);
-        }
-
-        [Fact]
-        public async Task CancelarPedidoAsync_PedidoExistente_RetornaTrue()
-        {
-            // Arrange
-            var pedido = new Pedido
-            {
-                Id = Guid.NewGuid(),
-                ProdutoId = Guid.NewGuid(),
-                Descricao = "Produto Teste",
-                Quantidade = 1,
-                PrecoUnitario = 25.00m,
-                ValorTotal = 25.00m,
-                Ativo = true
-            };
-            await _repository.AddAsync(pedido);
-
-            // Act
-            var resultado = await _repository.CancelarPedidoAsync(pedido.Id);
-
-            // Assert
-            Assert.True(resultado);
-            
-            var pedidoAtualizado = await _repository.GetByIdAsync(pedido.Id);
-            Assert.NotNull(pedidoAtualizado);
-            Assert.False(pedidoAtualizado.Ativo);
-        }
-
-        [Fact]
-        public async Task CancelarPedidoAsync_PedidoInexistente_RetornaFalse()
-        {
-            // Act
-            var resultado = await _repository.CancelarPedidoAsync(Guid.NewGuid());
 
             // Assert
             Assert.False(resultado);

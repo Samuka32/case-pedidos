@@ -1,6 +1,6 @@
 using System.Text.Json;
+using PedidosApi.Application.Interfaces;
 using PedidosApi.Domain.Entities;
-using PedidosApi.Domain.Interfaces;
 
 namespace PedidosApi.Infrastructure.Repositories;
 
@@ -11,8 +11,10 @@ public class JsonEstoqueRepository : IEstoqueRepository
 
     public JsonEstoqueRepository()
     {
-        // Usa o diretório atual ao invés do BaseDirectory
-        _filePath = Path.Combine(Directory.GetCurrentDirectory(), "estoque.json");
+        // Calcula o caminho para a pasta Data na raiz do repositório
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var projectRoot = Path.GetDirectoryName(currentDirectory);
+        _filePath = Path.Combine(projectRoot ?? currentDirectory, "Data", "estoque.json");
     }
 
     public JsonEstoqueRepository(string filePath)
@@ -60,48 +62,6 @@ public class JsonEstoqueRepository : IEstoqueRepository
                 return false;
 
             estoques[index] = estoque;
-            await SalvarEstoquesAsync(estoques);
-            return true;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    public async Task<bool> ReservarEstoqueAsync(Guid produtoId, int quantidade)
-    {
-        await _semaphore.WaitAsync();
-        try
-        {
-            var estoques = await GetAllInternalAsync();
-            var estoque = estoques.FirstOrDefault(e => e.ProdutoId == produtoId);
-            
-            if (estoque == null || estoque.QuantidadeDisponivel < quantidade)
-                return false;
-
-            estoque.QuantidadeDisponivel -= quantidade;
-            await SalvarEstoquesAsync(estoques);
-            return true;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    public async Task<bool> LiberarEstoqueAsync(Guid produtoId, int quantidade)
-    {
-        await _semaphore.WaitAsync();
-        try
-        {
-            var estoques = await GetAllInternalAsync();
-            var estoque = estoques.FirstOrDefault(e => e.ProdutoId == produtoId);
-            
-            if (estoque == null)
-                return false;
-
-            estoque.QuantidadeDisponivel += quantidade;
             await SalvarEstoquesAsync(estoques);
             return true;
         }
